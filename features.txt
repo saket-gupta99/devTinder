@@ -1,0 +1,8 @@
+//functionalities
+1. create account
+2. Login
+3. Update Profile
+4. Feed page - explore
+5. Send connection request
+6. See our matches
+7. See the request we've sent / recieved
