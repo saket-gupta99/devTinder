@@ -18,6 +18,12 @@ app.patch("/user", (req, res) => {
 app.use("/test", (req, res) => {
   res.send("Hello from the test server!");
 });
+app.use("/user/:id/:name", (req, res) => {
+  console.log(req.query); // Retrieves the query string from the URL
+  console.log(req.params); // Retrieves the route parameters (id and name)
+  res.send({ firstName: "Saket", lastName: "Gupta" });
+});
+
 
 app.listen(3000, () => {
   console.log("Server is listening...");
