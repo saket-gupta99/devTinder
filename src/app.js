@@ -1,30 +1,33 @@
 const express = require("express");
-
+const connectionDB = require("./config/database");
+const User = require("./models/user");
 const app = express();
 
-app.get("/user", (req, res) => {
-  res.send({ firstName: "Saket", lastName: "Gupta" });
-});
-app.post("/user", (req, res) => {
-  res.send("Data saved to DB");
-});
-app.delete("/user", (req, res) => {
-  res.send("deleted successfully");
-});
-app.patch("/user", (req, res) => {
-  res.send("updating some part of the resource");
-});
-//'use' matches all HTTP methods
-app.use("/test", (req, res) => {
-  res.send("Hello from the test server!");
-});
-app.use("/user/:id/:name", (req, res) => {
-  console.log(req.query); // Retrieves the query string from the URL
-  console.log(req.params); // Retrieves the route parameters (id and name)
-  res.send({ firstName: "Saket", lastName: "Gupta" });
-});
+connectionDB()
+  .then(() => {
+    console.log("Connection to DB established successfully...");
+    app.listen(3000, () => {
+      console.log("Server is listening...");
+    });
+  })
+  .catch((err) => {
+    console.log("Couldn't connect to the DB");
+  });
 
+app.post("/signup", async (req, res) => {
+  //create a new instance of User model
+  const user = new User({
+    firstName: "Kunal",
+    lastName: "Ghorpade",
+    email: "kunal@gmail.com",
+    password: "kunal@123",
+    age: 25,
+  });
 
-app.listen(3000, () => {
-  console.log("Server is listening...");
+  try {
+    await user.save();
+    res.send("User added successfully");
+  } catch (err) {
+    res.status(400).send("Error saving user data");
+  }
 });
