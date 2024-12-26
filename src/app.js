@@ -2,8 +2,13 @@ const express = require("express");
 const connectionDB = require("./config/database");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
 const User = require("./models/user");
 const { signupDataValidation } = require("./utils/validation");
+const { userAuth } = require("./middlewares/auth");
 
 const app = express();
 
@@ -20,6 +25,7 @@ connectionDB()
 
 //middleware to turn json to js object
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
   try {
@@ -67,82 +73,40 @@ app.post("/login", async (req, res) => {
       throw new Error("Enter a valid email");
     }
     const user = await User.findOne({ email });
+
     if (!user) {
       throw new Error("Invalid credentials");
     }
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    const isPasswordCorrect = user.validatePassword(password);
     if (!isPasswordCorrect) {
       throw new Error("Invalid credentials");
     }
+
+    //create a cookie and add jwt token to it. the first argument is to send userId to token using which you can find out the user. second is secret code which is specifically for u. you'll use it to get the user later. third argument set the expiry date of jwt token
+    const token = user.getJWT();
+
+    res.cookie("token", token, { maxAge: 604800000 }); //cookie expires after 7 days
+
     res.send("Login successful!");
   } catch (err) {
     res.status(400).send("Error: " + err.message);
   }
 });
 
-//get one user by email
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.email;
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const user = await User.findOne({ email: userEmail });
-    if (!user) res.status(404).send("User not found");
+    const user = req.user;
     res.send(user);
   } catch (err) {
-    res.status(400).send(err.message);
+    res.status(400).send("Error: " + err.message);
   }
 });
 
-//get all users
-app.get("/feed", async (req, res) => {
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
   try {
-    const users = await User.find();
-    if (!users) res.status(404).send("User not found");
-    res.send(users);
+    res.send("Connection request was sent by " + req.user.firstName);
   } catch (err) {
-    res.status(400).send(err.message);
-  }
-});
-
-//get user by id and update
-app.patch("/user/:id", async (req, res) => {
-  const userId = req.params.id;
-  const data = req.body;
-  try {
-    const ALLOWED_UPDATES = [
-      "password",
-      "age",
-      "gender",
-      "userPhoto",
-      "skills",
-      "about",
-    ];
-
-    const isUpdatedAllowed = Object.keys(req.body).every((key) =>
-      ALLOWED_UPDATES.includes(key)
-    );
-
-    if (!isUpdatedAllowed) throw new Error("Cannot update these fields");
-
-    const users = await User.findByIdAndUpdate(
-      userId,
-      data,
-      { new: true, runValidators: true } // setting 'new' to true returns the updated document and 'runvalidators' checks for validation before updating data
-    );
-    if (!users) res.status(404).send("User not found");
-    res.send(users);
-  } catch (err) {
-    res.status(400).send(err.message);
-  }
-});
-
-//delete one user
-app.delete("/user", async (req, res) => {
-  try {
-    // if _id is -1 it'll sort by newest first and for 1 it'll sort by oldest in collection
-    const user = await User.deleteOne({ firstName: "Luigi" }).sort({ _id: -1 });
-    if (user.deletedCount === 0) res.status(400).send("Can't find the user");
-    res.send("user delelted successfully");
-  } catch (err) {
-    res.status(400).send("");
+    res.status(400).send("Error: " + err.message);
   }
 });
