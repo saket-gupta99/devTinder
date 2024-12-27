@@ -74,4 +74,16 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
+authRouter.post("/logout", async (req, res) => {
+  try {
+    //This explicitly clears the cookie from the client's browser by sending a response to delete the cookie.
+    res.clearCookie("token");
+    //This approach removes the cookie by overwriting it with an expired cookie.
+    // res.cookie("token", null, { expires: new Date(Date.now()) }); 
+    res.send("Logged out successfully!");
+  } catch (err) {
+    res.status(400).send("Error: " + err.message);
+  }
+});
+
 module.exports = authRouter;

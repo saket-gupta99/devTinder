@@ -46,10 +46,9 @@ const userSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      validate(value) {
-        if (!["male", "female", "others"].includes(value)) {
-          throw new Error("Enter a valid gender");
-        }
+      enum: {
+        values: ["male", "female", "other"],
+        message: `{VALUE} is not a valid gender`,
       },
     },
     userPhoto: {
@@ -76,6 +75,9 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+//compound index. makes data lookup faster. 1 indicates ascending, -1 descending
+userSchema.index({ firstName: 1, lastName: 1 });
 
 //schema methods
 userSchema.methods.getJWT = function () {
