@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
+      lowercase: true,
       validate: {
         validator(value) {
           //there's validator for email too
